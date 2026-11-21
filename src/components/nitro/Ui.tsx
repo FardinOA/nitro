@@ -20,6 +20,12 @@ const uiScale = (origin: string): CSSProperties => ({
   transformOrigin: origin,
 });
 
+// Figma 1:14 / 1:17 / 1:19: Outfit Medium 16/150%, text anchored 45px from the left and 10px from the top of a
+// 44px-tall box. Box widths are fixed to Figma's (153 / 159) instead of padding + text width, so browser text
+// metrics can't resize them. More info's stroke is Figma's 1px *inside* stroke, so its padding is 44 + 1px border.
+const BTN =
+  "box-border flex h-[44px] items-center text-[16px] leading-[1.5] font-medium whitespace-nowrap transition-colors duration-300";
+
 function onNav(e: MouseEvent, goTo: GoTo, state?: StateIndex) {
   if (state === undefined) return;
   e.preventDefault();
@@ -61,7 +67,7 @@ export function Nav({ goTo, onMenu }: { goTo: GoTo; onMenu: () => void }) {
         href="#shop"
         data-nav
         onClick={(e) => onNav(e, goTo, 2)}
-        className="absolute top-[32px] right-[87px] flex items-center justify-center bg-nitro px-[45px] py-[10px] text-[16px] leading-[1.5] font-medium whitespace-nowrap text-black transition-colors duration-300 hover:bg-white group-data-[layout=tall]/stage:hidden"
+        className={`${BTN} absolute top-[32px] right-[87px] w-[153px] bg-nitro pl-[45px] text-black hover:bg-white group-data-[layout=tall]/stage:hidden`}
         style={uiScale("100% 50%")}
       >
         Buy Now
@@ -186,14 +192,14 @@ export function CtaButtons({ goTo }: { goTo: GoTo }) {
       <a
         href="#shop"
         onClick={(e) => onNav(e, goTo, 2)}
-        className="flex items-center justify-center bg-white px-[45px] py-[10px] text-[16px] leading-[1.5] font-medium whitespace-nowrap text-black transition-colors duration-300 hover:bg-nitro"
+        className={`${BTN} w-[153px] bg-white pl-[45px] text-black hover:bg-nitro`}
       >
         Buy Now
       </a>
       <a
         href="#about"
         onClick={(e) => onNav(e, goTo, 1)}
-        className="flex items-center justify-center border border-white px-[44px] py-[9px] text-[16px] leading-[1.5] font-medium whitespace-nowrap text-white transition-colors duration-300 hover:border-nitro hover:text-nitro"
+        className={`${BTN} w-[159px] border border-white pl-[44px] text-white hover:border-nitro hover:text-nitro`}
       >
         More info
       </a>
