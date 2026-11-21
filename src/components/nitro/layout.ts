@@ -122,15 +122,16 @@ function wideLayout(vw: number, vh: number): StageLayout {
   const down = (y: number) => y + pad;
   const drop = PRODUCT_DROP + pad;
 
-  const slot = (x: number, y: number, h: number, ix: number, iy: number): Slot => ({ x, y, h, ix, iy, is: ui });
+  // Product info is centred on its can (Figma had it drifting up to 14 units off the can axis).
+  const slot = (x: number, y: number, h: number, iy: number): Slot => ({ x, y, h, ix: x, iy, is: ui });
   const slots: Slot[] = [
-    slot(-140, 653, 380, -137, 880),
-    slot(204.104, 613, 442, 207, 880),
-    slot(566.104, 573, 522, 580, 880),
-    slot(960, 541.273, CAN.h, 964, 915),
-    slot(1387, 573, 522, 1387, 880),
-    slot(1717.831, 613, 442, 1718, 880),
-    slot(2060, 653, 380, 2060, 880),
+    slot(-140, 653, 380, 880),
+    slot(204.104, 613, 442, 880),
+    slot(566.104, 573, 522, 880),
+    slot(960, 541.273, CAN.h, 915),
+    slot(1387, 573, 522, 880),
+    slot(1717.831, 613, 442, 880),
+    slot(2060, 653, 380, 880),
   ];
   const center = slotAt(slots, 0);
 
@@ -234,7 +235,7 @@ function tallLayout(vw: number, vh: number): StageLayout {
     side(-1, 0.42 * cH, 1.15),
     side(-1, 0.5 * cH, 0.8),
     side(-1, 0.62 * cH, 0.41),
-    { x: W / 2, y: canTop + cH / 2, h: cH, ix: W / 2 + 4 * gs, iy: infoTop, is: infoScale },
+    { x: W / 2, y: canTop + cH / 2, h: cH, ix: W / 2, iy: infoTop, is: infoScale },
     side(1, 0.62 * cH, 0.41),
     side(1, 0.5 * cH, 0.8),
     side(1, 0.42 * cH, 1.15),
