@@ -75,9 +75,6 @@ const LABEL_X: [number, number, number] = [-6.3788, -68.327, -37.839];
 export const PRODUCT_LABEL_X = -38.445;
 
 const PRODUCT_DROP = 1071;
-// The NITRO glyph run's ink sits 35.5 units right of its text box centre (measured: ink 118→1873 at 1920);
-// shifting by it centres the visible lettering on the stage.
-const WORD_INK_DX = 35.5;
 
 const below = (p: Pose, d: number): [Pose, Pose, Pose] => [{ ...p, y: p.y + d }, { ...p, y: p.y + d }, p];
 
@@ -156,9 +153,9 @@ function wideLayout(vw: number, vh: number): StageLayout {
       header: {
         origin: [0.5, 0.5],
         poses: [
-          { x: 960 - WORD_INK_DX, y: 441.5 },
-          { x: 960 - WORD_INK_DX, y: up(-628.5) },
-          { x: 960 - WORD_INK_DX, y: up(-628.5) },
+          { x: 960, y: 441.5 },
+          { x: 960, y: up(-628.5) },
+          { x: 960, y: up(-628.5) },
         ],
       },
       subtext: { origin: [0, 0], poses: [{ x: 88, y: 892, scale: ui }, { x: 88, y: up(-178), scale: ui }, { x: 88, y: up(-178), scale: ui }] },
@@ -280,9 +277,9 @@ function tallLayout(vw: number, vh: number): StageLayout {
       header: {
         origin: [0.5, 0.5],
         poses: [
-          { x: W / 2 - WORD_INK_DX * hs, y: wordY, scale: hs },
-          { x: W / 2 - WORD_INK_DX * hs, y: wordY - H, scale: hs },
-          { x: W / 2 - WORD_INK_DX * hs, y: wordY - H, scale: hs },
+          { x: W / 2, y: wordY, scale: hs },
+          { x: W / 2, y: wordY - H, scale: hs },
+          { x: W / 2, y: wordY - H, scale: hs },
         ],
       },
       // Copy and CTAs leave together (same distance) and fade, so the stacked block can never overlap itself.
