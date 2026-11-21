@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-nitro: var(--accent);
+  --color-muted: rgb(255 255 255 / 0.58);
+  --font-sakana: var(--font-sakana);
+  --font-outfit: var(--font-outfit);
+  --font-sans: var(--font-outfit);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --nitro-bg: url("data:image/svg+xml;utf8,<svg viewBox='0 0 1920 1098' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='1'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(-1 59.85 -104.66 -1.7486 960 510)'><stop stop-color='rgba(39,39,39,1)' offset='0'/><stop stop-color='rgba(20,20,20,1)' offset='0.5'/><stop stop-color='rgba(10,10,10,1)' offset='0.75'/><stop stop-color='rgba(0,0,0,1)' offset='1'/></radialGradient></defs></svg>");
+  /* Featured-flavour accent; GSAP tweens it when the carousel settles. Figma green by default. */
+  --accent: #e0e600;
+  /* Figma's wordmark gradient is the accent at 56% → 78% → 100%. This alpha ramp (44% → 22% → 0%, same
+     radial transform) masks a black copy of the text laid over solid accent, reproducing it for any flavour. */
+  --nitro-text-shade: url("data:image/svg+xml;utf8,<svg viewBox='0 0 1760 909' xmlns='http://www.w3.org/2000/svg' preserveAspectRatio='none'><rect x='0' y='0' height='100%' width='100%' fill='url(%23grad)' opacity='1'/><defs><radialGradient id='grad' gradientUnits='userSpaceOnUse' cx='0' cy='0' r='10' gradientTransform='matrix(17.034 44.863 -86.864 32.916 952.62 614.54)'><stop stop-color='black' stop-opacity='0.442' offset='0'/><stop stop-color='black' stop-opacity='0.223' offset='0.5'/><stop stop-color='black' stop-opacity='0' offset='1'/></radialGradient></defs></svg>");
+}
+
+html {
+  background: #000;
+  color: #fff;
+}
+
+/* Keyboard focus in the brand accent instead of the browser's default double ring. */
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.can-mask {
+  mask-image: url("/figma/can.png");
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-image: url("/figma/can.png");
+  -webkit-mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
 }
