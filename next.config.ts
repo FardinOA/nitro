@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // The dev-mode "N" badge sits over the hero CTAs on phones.
+  devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
