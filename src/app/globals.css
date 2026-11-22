@@ -34,11 +34,28 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Wordmark intro when the boot script paints it before hydration — same motion GSAP used (y 180 → 0, expo.out).
+   Uses the individual translate property so it never fights GSAP's transform on the same layer. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-pre] [data-intro="header"] {
+    animation: nitro-rise 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+  }
+}
+
+/* 0.01, not 0: Chrome skips opacity-0 paints for LCP and a compositor fade never re-reports, so a true-zero start
+   would push LCP back to the next main-thread paint (after hydration). Visually identical. */
+@keyframes nitro-rise {
+  from {
+    translate: 0 180px;
+    opacity: 0.01;
+  }
+}
+
 .can-mask {
-  mask-image: url("/figma/can.png");
+  mask-image: url("/figma/can-mask.webp");
   mask-size: 100% 100%;
   mask-repeat: no-repeat;
-  -webkit-mask-image: url("/figma/can.png");
+  -webkit-mask-image: url("/figma/can-mask.webp");
   -webkit-mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
 }

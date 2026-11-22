@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Tailwind output is ~6 KB; inlining it removes the only render-blocking request.
+    inlineCss: true,
+  },
   turbopack: {
     rules: {
       "*.css": {

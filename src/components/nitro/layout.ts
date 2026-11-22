@@ -84,6 +84,26 @@ export function isWide(vw: number, vh: number) {
   return vw >= 900 && vw / vh >= 1.2;
 }
 
+// Stage transform + the wordmark's frame-1 pose. Also serialised (via toString) into an inline script that paints
+// the wordmark before hydration, so it must stay self-contained: literals only, no outer references.
+// Scales are pre-rounded to GSAP's 4 decimals so the boot paint and GSAP's first set are pixel-identical (any
+// growth, even sub-pixel, would make Chrome log a second, later LCP).
+export function firstFrame(vw: number, vh: number) {
+  const r4 = (v: number) => Math.round(v * 1e4) / 1e4;
+  if (vw >= 900 && vw / vh >= 1.2) {
+    const s = r4(Math.min(vw / 1920, vh / 1098));
+    return { wide: true, W: 1920, H: 1098, s, ox: (vw - 1920 * s) / 2, oy: (vh - 1098 * s) / 2, x: 960, y: 441.5, scale: 1 };
+  }
+  const W = Math.max(430, vw / 1.25);
+  const s = r4(vw / W);
+  const H = vh / s;
+  // Poster band between the nav (84 + 4) and the spin hint (H − 178 − 26); the glyphs' optical centre sits
+  // 55.5 units below the text box centre.
+  const posterCy = (84 + 4 + H - 204) / 2;
+  const scale = r4((W - 24) / 1760);
+  return { wide: false, W, H, s, ox: 0, oy: 0, x: W / 2, y: posterCy - 55.5 * scale, scale, posterCy };
+}
+
 export function computeLayout(vw: number, vh: number): StageLayout {
   return isWide(vw, vh) ? wideLayout(vw, vh) : tallLayout(vw, vh);
 }
@@ -114,7 +134,8 @@ function carouselElements(slots: Slot[], drop: number) {
 }
 
 function wideLayout(vw: number, vh: number): StageLayout {
-  const s = Math.min(vw / FIGMA.W, vh / FIGMA.H);
+  const first = firstFrame(vw, vh);
+  const s = first.s;
   const ui = Math.min(1.3, Math.max(1, 0.75 / s));
   // Letterbox height (stage units) above/below the frame; off-frame poses must clear it too.
   const pad = Math.max(0, (vh / s - FIGMA.H) / 2);
@@ -140,8 +161,8 @@ function wideLayout(vw: number, vh: number): StageLayout {
     W: FIGMA.W,
     H: FIGMA.H,
     s,
-    ox: (vw - FIGMA.W * s) / 2,
-    oy: (vh - FIGMA.H * s) / 2,
+    ox: first.ox,
+    oy: first.oy,
     pad,
     ui,
     labelX: LABEL_X,
@@ -154,7 +175,7 @@ function wideLayout(vw: number, vh: number): StageLayout {
       header: {
         origin: [0.5, 0.5],
         poses: [
-          { x: 960, y: 441.5 },
+          { x: first.x, y: first.y },
           { x: 960, y: up(-628.5) },
           { x: 960, y: up(-628.5) },
         ],
@@ -184,9 +205,8 @@ function wideLayout(vw: number, vh: number): StageLayout {
 //   Frame 2 — editorial: photo card, the can leaning out over its corner, SINCE / 2002 / PRODUCING beneath.
 //   Frame 3 — swipe coverflow with page dots.
 function tallLayout(vw: number, vh: number): StageLayout {
-  const W = Math.max(430, vw / 1.25);
-  const s = vw / W;
-  const H = vh / s;
+  const first = firstFrame(vw, vh);
+  const { W, s, H } = first;
   const m = 20;
   const navBottom = 84;
 
@@ -200,7 +220,7 @@ function tallLayout(vw: number, vh: number): StageLayout {
   const posterH = posterBottom - posterTop;
   const posterCy = posterTop + posterH / 2;
   // Wordmark spans the width so it reads; the upright can crosses its middle like the desktop composition.
-  const hs = (W - 24) / 1760;
+  const hs = first.scale;
   const can1Scale = Math.min(0.7 * posterH, 1.25 * W) / CAN.h;
 
   // Frame 2
@@ -241,8 +261,7 @@ function tallLayout(vw: number, vh: number): StageLayout {
     side(1, 0.42 * cH, 1.15),
   ];
 
-  // The glyphs' optical centre sits 55.5 units below the text box centre.
-  const wordY = posterCy - 55.5 * hs;
+  const wordY = first.y;
   const SPOT = 600;
 
   return {

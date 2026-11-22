@@ -12,6 +12,7 @@ import { CanGlow, FLAVOURS, LABEL_PERIOD, MainCan, ProductCan } from "./Can";
 import { createLabelRenderer } from "./labelRenderer";
 import { createCarousel } from "./carousel";
 import { createRoll } from "./roll";
+import { centreWordmark } from "./wordmark";
 import { CAROUSEL_ITEMS, HERO_ITEM, computeLayout, type ElementKey, type Pose, type StageLayout } from "./layout";
 import { CarouselDots, CtaButtons, MobileMenu, Nav, ProductInfo, SocialLinks, SpinHint, Spotlight, type GoTo } from "./Ui";
 
@@ -41,8 +42,9 @@ function Layer({
   children: ReactNode;
 }) {
   return (
-    <div data-intro={intro ? k : undefined} className="pointer-events-none absolute inset-0">
-      <div data-el={k} className={`pointer-events-auto absolute top-0 left-0 ${className}`}>
+    // The boot script in page.tsx styles the header layer before hydration.
+    <div data-intro={intro ? k : undefined} className="pointer-events-none absolute inset-0" suppressHydrationWarning>
+      <div data-el={k} className={`pointer-events-auto absolute top-0 left-0 ${className}`} suppressHydrationWarning>
         {carousel ? <div data-cr="">{children}</div> : children}
       </div>
     </div>
@@ -51,35 +53,6 @@ function Layer({
 
 // Carousel is live only once the scroll has fully settled on frame 3.
 const CAROUSEL_THRESHOLD = 0.995;
-
-// The NITRO glyphs are italic and tightly tracked, so their ink isn't centred in the text box (it sits ~36 units
-// right), and the exact offset depends on the browser's font rasterising. Measure the real ink extent — DOM gives
-// where the first/last glyph start, canvas gives how far each glyph's ink reaches — and shift the text so the
-// visible lettering is centred on the box, which the layout centres on the stage.
-function centreWordmark(h1: HTMLElement | undefined) {
-  const text = h1?.firstChild;
-  if (!h1 || !(text instanceof Text)) return;
-  const first = text.data.search(/\S/);
-  const last = text.data.trimEnd().length - 1;
-  const ctx = document.createElement("canvas").getContext("2d");
-  if (first < 0 || !ctx) return;
-  const cs = getComputedStyle(h1);
-  ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-  const glyph = (i: number) => (cs.textTransform === "uppercase" ? text.data[i].toUpperCase() : text.data[i]);
-  const range = document.createRange();
-  const startOf = (i: number) => {
-    range.setStart(text, i);
-    range.setEnd(text, i + 1);
-    return range.getBoundingClientRect().left;
-  };
-  const box = h1.getBoundingClientRect();
-  const k = box.width / h1.offsetWidth;
-  if (!k) return;
-  const inkL = (startOf(first) - box.left) / k - ctx.measureText(glyph(first)).actualBoundingBoxLeft;
-  const inkR = (startOf(last) - box.left) / k + ctx.measureText(glyph(last)).actualBoundingBoxRight;
-  const dx = (inkL + inkR) / 2 - h1.offsetWidth / 2;
-  if (Number.isFinite(dx)) h1.style.translate = `${-dx}px 0`;
-}
 
 const toVars = (p: Pose) => ({ x: p.x, y: p.y, scale: p.scale ?? 1, rotation: p.rotation ?? 0, autoAlpha: p.opacity ?? 1 });
 
@@ -125,6 +98,20 @@ export default function NitroExperience() {
       let carouselApi: ReturnType<typeof createCarousel> | undefined;
 
       const build = (playIntro: boolean) => {
+        // The pin below re-parents the section, which would restart the boot script's CSS wordmark rise.
+        // Hand it to GSAP first: freeze it where it is and let a tween finish the remaining motion from there.
+        if (playIntro && "pre" in section.dataset) {
+          const wrap = q('[data-intro="header"]')[0];
+          const rise = wrap.getAnimations()[0];
+          const cs = getComputedStyle(wrap);
+          const y = parseFloat(cs.translate.split(" ")[1] ?? "0") || 0;
+          const opacity = parseFloat(cs.opacity);
+          const progress = rise?.effect?.getComputedTiming().progress ?? 0;
+          const remaining = rise && rise.playState !== "finished" ? (1 - progress) * 1.6 : 0;
+          wrap.style.animation = "none";
+          if (remaining > 0) gsap.fromTo(wrap, { y, opacity }, { y: 0, opacity: 1, duration: remaining, ease: "expo.out" });
+        }
+
         const L: StageLayout = computeLayout(section.clientWidth, section.offsetHeight);
         section.dataset.layout = L.mode;
         gsap.set(stage, { width: L.W, height: L.H, x: L.ox, y: L.oy, scale: L.s, transformOrigin: "0 0", "--ui": L.ui, "--pad": L.pad });
@@ -197,13 +184,26 @@ export default function NitroExperience() {
           onRefresh: (self) => setDragMode(self.progress),
         });
 
+        // The boot script already painted the wordmark (and CSS is rising it in); fade everything else in around it.
+        const prePainted = "pre" in section.dataset;
+        // Tells the boot script not to reveal late (e.g. if the font is still loading when hydration finishes).
+        section.dataset.live = "";
         if (playIntro && !reduce) {
           const canPose = L.elements.can.poses[0];
-          gsap
-            .timeline({ defaults: { ease: "expo.out" } })
-            .fromTo(stage, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, ease: "none" })
+          const intro = gsap.timeline({ defaults: { ease: "expo.out" } });
+          if (prePainted) {
+            gsap.set(stage, { autoAlpha: 1 });
+            // Only layers without their own intro tween: a [data-intro] layer faded here would make its own
+            // .from() below record 0 as its end value and never appear.
+            const rest = [...stage.children].filter((c) => !(c as HTMLElement).dataset.intro);
+            intro.fromTo(rest, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, ease: "none" });
+          } else {
+            intro
+              .fromTo(stage, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.5, ease: "none" })
+              .from(q('[data-intro="header"]'), { y: 180, autoAlpha: 0, duration: 1.6 }, 0.1);
+          }
+          intro
             .from(q("[data-nav]"), { y: -24, autoAlpha: 0, duration: 1, stagger: 0.07 }, 0.15)
-            .from(q('[data-intro="header"]'), { y: 180, autoAlpha: 0, duration: 1.6 }, 0.1)
             .from(
               q('[data-intro="can"]'),
               { y: 320, scale: 0.75, autoAlpha: 0, duration: 1.8, transformOrigin: `${canPose.x}px ${canPose.y}px` },
@@ -281,18 +281,19 @@ export default function NitroExperience() {
       <section
         ref={sectionRef}
         id="home"
+        suppressHydrationWarning
         aria-label="Nitro energy drink"
         className="group/stage relative h-svh w-full overflow-hidden bg-black"
         style={{ backgroundImage: "var(--nitro-bg)", backgroundSize: "100% 100%" }}
       >
-        <div ref={stageRef} className="invisible absolute top-0 left-0 origin-top-left">
+        <div ref={stageRef} data-stage="" className="invisible absolute top-0 left-0 origin-top-left" suppressHydrationWarning>
           <Layer k="spot">
             <Spotlight />
           </Layer>
           <Layer k="header" intro>
             {/* Glyphs overhang Figma's 1760px text box, so the box is padded by 120px each side.
                 Solid accent text + a black copy masked by Figma's gradient = Figma's gradient in any flavour. */}
-            <h1 className="relative h-[909px] w-[2000px] px-[120px] text-center font-sakana text-[568.386px] leading-[909px] tracking-[-17.0516px] whitespace-nowrap text-nitro">
+            <h1 suppressHydrationWarning className="relative h-[909px] w-[2000px] px-[120px] text-center font-sakana text-[568.386px] leading-[909px] tracking-[-17.0516px] whitespace-nowrap text-nitro">
               Nitro
               <span
                 aria-hidden

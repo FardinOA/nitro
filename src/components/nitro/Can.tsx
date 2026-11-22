@@ -29,7 +29,7 @@ function CanShadow({ box, src, inset }: { box: Box; src: string; inset: string }
 // label-panel.jpg is one 514px period cut around the middle logo, so repeating it gives an evenly spaced,
 // seamless label. Geometry is in % of the label strip (object-cover fit by height crops 4.2px per side).
 const SRC = { visible: 1017 * (1109.144 / 664.836), panelStart: 842 - 257 };
-export const LABEL_PANEL = { src: "/figma/label-panel.jpg", width: 514, height: 1017 };
+export const LABEL_PANEL = { src: "/figma/label-panel.webp", width: 514, height: 1017 };
 export const LABEL_PERIOD = (LABEL_PANEL.width / SRC.visible) * 100;
 // Where a panel begins, in % of the strip; panels repeat every LABEL_PERIOD from here.
 export const LABEL_ORIGIN = ((SRC.panelStart - (1705 - SRC.visible) / 2) / SRC.visible) * 100;
