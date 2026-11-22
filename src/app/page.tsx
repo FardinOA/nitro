@@ -1,6 +1,58 @@
 import NitroExperience from "@/components/nitro/NitroExperience";
 import { firstFrame } from "@/components/nitro/layout";
 import { centreWordmark } from "@/components/nitro/wordmark";
+import { FLAVOURS } from "@/components/nitro/Can";
+import { SITE, SITE_URL } from "@/site";
+
+// Structured data: the brand, the site, and the five flavours as products with prices (from the same FLAVOURS
+// the carousel renders, so they can't drift).
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: SITE.name,
+      url: SITE_URL,
+      logo: `${SITE_URL}/icon.png`,
+      foundingDate: SITE.foundingYear,
+      slogan: SITE.tagline,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: SITE.name,
+      description: SITE.description,
+      inLanguage: "en",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+    },
+    {
+      "@type": "ItemList",
+      "@id": `${SITE_URL}/#flavours`,
+      name: `${SITE.name} flavours`,
+      itemListElement: FLAVOURS.map((f, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Product",
+          name: f.name,
+          description: `${f.name} — ${SITE.tagline.toLowerCase()} energy drink.`,
+          category: "Energy drink",
+          image: `${SITE_URL}/opengraph-image.jpg`,
+          brand: { "@type": "Brand", name: SITE.name },
+          offers: {
+            "@type": "Offer",
+            url: `${SITE_URL}/#shop`,
+            price: parseFloat(f.price).toFixed(2),
+            priceCurrency: SITE.currency,
+            availability: "https://schema.org/InStock",
+          },
+        },
+      })),
+    },
+  ],
+};
 
 // Runs as soon as the stage HTML is parsed, before React hydrates: poses the stage and the NITRO wordmark exactly
 // where the layout engine will, and reveals just the wordmark. It is the LCP element, so it paints without waiting
@@ -40,6 +92,8 @@ export default function Home() {
     <>
       <NitroExperience />
       <script dangerouslySetInnerHTML={{ __html: boot }} />
+      {/* `<` escaped so no string in the payload can close the script tag. */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
     </>
   );
 }
