@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   experimental: {
-    // Tailwind output is ~6 KB; inlining it removes the only render-blocking request.
+    // Inline the Tailwind stylesheet into the HTML. On throttled mobile an external
+    // stylesheet shares the connection with the JS chunks and image preloads requested at the same moment, which
+    // pushed first paint from ~0.7s to ~1.4s.
     inlineCss: true,
   },
   turbopack: {

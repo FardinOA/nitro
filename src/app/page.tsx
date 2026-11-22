@@ -2,6 +2,8 @@ import NitroExperience from "@/components/nitro/NitroExperience";
 import { firstFrame } from "@/components/nitro/layout";
 import { centreWordmark } from "@/components/nitro/wordmark";
 import { FLAVOURS } from "@/components/nitro/Can";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { SITE, SITE_URL } from "@/site";
 
 // Structured data: the brand, the site, and the five flavours as products with prices (from the same FLAVOURS
@@ -57,7 +59,19 @@ const jsonLd = {
 // Runs as soon as the stage HTML is parsed, before React hydrates: poses the stage and the NITRO wordmark exactly
 // where the layout engine will, and reveals just the wordmark. It is the LCP element, so it paints without waiting
 // for the JS bundle; NitroExperience sees data-pre and plays the rest of the intro around it.
+// Sakana (ASCII subset, 5 KB WOFF2) ships inside the boot script and is registered from bytes: Chrome makes a
+// FontFace built from an ArrayBuffer usable synchronously, so the wordmark is measured, centred and revealed during
+// HTML parse and lands in the very first paint — no font request, no fallback flash, and no async step that JS could
+// slip in front of. Every Sakana string on the page is hidden until this script or the intro reveals it.
+// Regenerate the subset: pyftsubset Sakana.ttf --unicodes=U+0020-007E --flavor=woff2 --layout-features='*'
+const sakana = readFileSync(join(process.cwd(), "src/fonts/Sakana-subset.woff2")).toString("base64");
+
 const boot = `(function(firstFrame,centreWordmark){
+try{
+var bin=atob("${sakana}"),bytes=new Uint8Array(bin.length);
+for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+document.fonts.add(new FontFace("Sakana",bytes,{display:"block"}));
+}catch(e){}
 var sec=document.getElementById("home");
 var stage=sec&&sec.querySelector("[data-stage]");
 var wrap=sec&&sec.querySelector('[data-intro="header"]');
@@ -79,11 +93,13 @@ centreWordmark(h1);
 wrap.style.visibility="visible";
 sec.dataset.pre="";
 }
-// Reveal on the real Sakana glyphs (preloaded, so usually a few hundred ms) — no fallback-font flash, and no
-// later re-paint for Chrome to count as a bigger LCP. Never wait more than 1.5s on the font.
+// Reveal on the real Sakana glyphs — no fallback-font flash, and no later re-paint for Chrome to count as a bigger
+// LCP. Registered from bytes above, so it is ready now; the async path only covers browsers that decode lazily.
+// Never wait more than 1.5s on the font.
 var cs=getComputedStyle(h1);
-if(document.fonts&&document.fonts.load)document.fonts.load(cs.fontSize+" "+cs.fontFamily,"Nitro").then(reveal,reveal);
-else reveal();
+var face=cs.fontSize+" "+cs.fontFamily;
+if(!document.fonts||!document.fonts.load||document.fonts.check(face,"Nitro"))reveal();
+else document.fonts.load(face,"Nitro").then(reveal,reveal);
 setTimeout(reveal,1500);
 })(${firstFrame.toString()},${centreWordmark.toString()})`;
 

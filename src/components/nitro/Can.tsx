@@ -47,17 +47,26 @@ function CanBody({
   tint,
   labelX,
   labelRef,
-  priority,
+  preload,
 }: {
   sizes: string;
   tint?: string;
   labelX?: number;
   labelRef?: boolean;
-  priority?: boolean;
+  preload?: boolean;
 }) {
   return (
     <>
-      <Image src="/figma/can.png" alt="" fill sizes={sizes} priority={priority} className="pointer-events-none object-cover" />
+      {/* Hero can: preloaded from the SSR <head> (early discovery). Default fetch priority — it isn't the LCP and only
+          appears with the post-hydration intro, so "high" would compete with the render-blocking CSS. */}
+      <Image
+        src="/figma/can.png"
+        alt=""
+        fill
+        sizes={sizes}
+        preload={preload}
+        className="pointer-events-none object-cover"
+      />
       {/* Print, drawn by labelRenderer onto a canvas with the cylinder warp; burned onto the silver can. */}
       <div aria-hidden className="can-mask absolute inset-0 mix-blend-color-burn">
         <canvas data-label-canvas="" className="absolute inset-0 size-full" />
@@ -103,7 +112,7 @@ export function MainCan({ tint }: { tint?: string }) {
         inset="-98.57% -9.54%"
         box={{ left: 75.4116, top: -6.2496, width: 26.0543, height: 102.1205 }}
       />
-      <CanBody sizes="(min-width: 900px) 35vw, 80vw" tint={tint} labelRef priority />
+      <CanBody sizes="(min-width: 900px) 35vw, 80vw" tint={tint} labelRef preload />
     </div>
   );
 }

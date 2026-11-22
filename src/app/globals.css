@@ -3,7 +3,8 @@
 @theme inline {
   --color-nitro: var(--accent);
   --color-muted: rgb(255 255 255 / 0.58);
-  --font-sakana: var(--font-sakana);
+  /* Registered from bytes by the boot script in page.tsx. */
+  --font-sakana: Sakana, sans-serif;
   --font-outfit: var(--font-outfit);
   --font-sans: var(--font-outfit);
 }
@@ -38,7 +39,8 @@ body {
    Uses the individual translate property so it never fights GSAP's transform on the same layer. */
 @media (prefers-reduced-motion: no-preference) {
   [data-pre] [data-intro="header"] {
-    animation: nitro-rise 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+    /* No delay: during an animation-delay Chrome holds off recording the element for LCP until it starts. */
+    animation: nitro-rise 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 }
 
